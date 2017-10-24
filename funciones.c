@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 int estaEn(int* arreglo, int valor, int largo) {
   int i;
@@ -12,20 +13,6 @@ int estaEn(int* arreglo, int valor, int largo) {
   return 0;
 }
 
-// int seRelacionan(int* arregloA, int* arregloB, int largo) {
-//   int i;
-//   int j;
-//   for (i = 0; i < largo; i++) {
-//     if (arregloA[i] == 1) {
-//       for (j = 0; j < largo; j++) {
-//         if (i + 1 == arregloB[j]) {
-//           return 1;
-//         }
-//       }
-//     }
-//   }
-//   return 0;
-// }
 void ordenarClique(int** arreglo, int largo) {
   int i;
   int j;
@@ -47,28 +34,24 @@ int** generarMatrizAdyacencia(int* ordenMatriz) {
   int   x;
   int   y;
   int** matriz;
-  char  linea[5];
 
   matriz  = NULL;
-  archivo = fopen ("Entrada2.in", "r");
+  archivo = fopen ("Entrada.in", "r");
 
   while (archivo == NULL) {
     printf("\n [>] Archivo 'Entrada.in' no encontrado !\n");
     exit(0);
   }
 
-  fgets(linea, 5, archivo);
-  *ordenMatriz = (int)linea[0] - 48;
+  fscanf(archivo, "%d\n", ordenMatriz);
   matriz = (int **)calloc(*ordenMatriz, sizeof(int*));
   for (x = 0; x < *ordenMatriz; x++) {
     matriz[x] = (int*)calloc(*ordenMatriz, sizeof(int));
   }
 
-  while (fgets(linea, 5 ,archivo)) {
-    x            = (int)linea[0] - 49;
-    y            = (int)linea[2] - 49;
-    matriz[x][y] = 1;
-    matriz[y][x] = 1;
+  while (fscanf(archivo, "%d %d\n", &x, &y) != EOF) {
+    matriz[x-1][y-1] = 1;
+    matriz[y-1][x-1] = 1;
   }
 
   fclose (archivo);
@@ -171,59 +154,47 @@ void obtenerVinculos(int** matriz, int ordenMatriz){
   }
 }
 
-int** generarCliques(int** matriz, int ordenMatriz) {
+void generarCliques(int** matriz, int ordenMatriz) {
   int i;
   int j;
-  int** cliques;
-
-  cliques = (int **)calloc(ordenMatriz * 2, sizeof(int *));
-
-  for (i = 0; i < ordenMatriz * 2; i++) {
-    if(i%2 == 0) {
-      cliques[i]    = (int *)calloc(2, sizeof(int));
-      cliques[i][0] = i + 1;
-    }
-    else {
-      cliques[i] = (int *)calloc(1,sizeof(int));
-    }
-  }
+  int k;
+  int l;
 
   for (i = 0; i < ordenMatriz; i++) {
-    cliques[i * 2][1] ++;
-    cliques[(i * 2) + 1][0] = i + 1;
-    for (j = 0; j < ordenMatriz; j++) {
-      if (matriz[i][j] == 1) {
-        cliques[i * 2][1] ++;
-        cliques[(i * 2) + 1] = (int*)realloc(cliques[(i * 2) + 1], sizeof(int) * cliques[i * 2][1]);
-        cliques[(i * 2) + 1][(cliques[i * 2][1]) - 1] = j + 1;
+    for (j = i+1; j < ordenMatriz; j++) {
+      for (k = j+1; k < ordenMatriz; k++) {
+        for (l = k+1;l < ordenMatriz; l++) {
+          if (i != j && matriz[i][j]) {
+            if (i != k && matriz[i][k]) {
+              if (i != l && matriz[i][l]) {
+                if (j != k && matriz[j][k]) {
+                  if (j != l && matriz[j][l]) {
+                    if (k != l && matriz[k][l]) {
+                      printf("%d, %d, %d, %d conforman un grupo de mejores amigos\n",i+1,j+1,k+1,l+1);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
-
-  for (i = 0; i < ordenMatriz; i++) {
-    if (cliques[i * 2][1] > 3) {
-      ordenarClique(&cliques[(i * 2) + 1], cliques[i * 2][1]);
-    }
-  }
-  return cliques;
 }
 
 void iniciar(){
   int ordenMatriz;
   int** matriz;
-  int** cliques;
+  time_t inicioMatriz;
+  time_t finalMatriz;
   matriz = generarMatrizAdyacencia(&ordenMatriz);
+  time(&inicioMatriz);
   printf("\n\n***** Inicio del Programa *****\n\n");
   obtenerVinculos(matriz, ordenMatriz);
-  cliques = generarCliques(matriz, ordenMatriz);
-  // int i;
-  // int j;
-  // printf("\n\n");
-  // for (i = 0; i < ordenMatriz; i++) {
-  //   for (j = 0; j < cliques[i*2][1]; j++) {
-  //     printf("%d ", cliques[(i*2) + 1][j]);
-  //   }
-  //   printf("\n");
-  // }
-  printf("\n***** Fin del Programa *****\n\n\n");
+  generarCliques(matriz, ordenMatriz);
+  printf("\n***** Fin del Programa *****\n\n");
+  time(&finalMatriz);
+  printf("Tiempo utilizado: %f\n", difftime(inicioMatriz, finalMatriz));
+
 }

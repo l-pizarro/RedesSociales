@@ -16,6 +16,6 @@ int obtenerGrupos(int** matriz, int eliminado, int ordenMatriz);
 
 void obtenerVinculos(int** matriz, int ordenMatriz);
 
-int** generarCliques(int matriz, int ordenMatriz);
+void generarCliques(int matriz, int ordenMatriz);
 
 void iniciar();
