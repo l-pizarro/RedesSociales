@@ -4,7 +4,7 @@
 #include <time.h>
 #include "funciones.h"
 
-// LISTA DE ADYACENCIA
+// FUNCIONES LISTA DE ADYACENCIA
 Lista* crearLista(int cantidadVertices) {
   int i;
   Lista* lista = (Lista*)calloc(1, sizeof(Lista));
@@ -65,6 +65,70 @@ int esAdyacente(int valor, Adyacentes* adyacentes) {
   return 0;
 }
 
+int obtenerGruposL(Lista* lista, int eliminado) {
+  int i;
+  int j;
+  int cantidadGrupos;
+  int* revisados;
+
+  revisados      = (int *)calloc(lista->cantidad, sizeof(int));
+  cantidadGrupos = 0;
+
+  for (i = 0; i < lista->cantidad; i++) {
+    if (i + 1 == eliminado) {
+      continue;
+    }
+    if (!estaEn(revisados, i + 1, lista->cantidad)) {
+      revisados[i] = i+1;
+      cantidadGrupos ++;
+    }
+    for (j = 0; j < lista->adyacentes[i].largo; j++) {
+      if (lista->adyacentes[i].vertices[j] == eliminado) {
+        continue;
+      }
+      if (!estaEn(revisados, lista->adyacentes[i].vertices[j], lista->cantidad)) {
+        revisados[lista->adyacentes[i].vertices[j] - 1] = lista->adyacentes[i].vertices[j];
+        conectarL(lista->adyacentes[i].vertices[j] - 1, lista, &revisados, eliminado);
+      }
+    }
+  }
+
+  free(revisados);
+
+  return cantidadGrupos;
+}
+
+void conectarL(int valor, Lista* lista, int** revisados, int eliminado) {
+
+  int x;
+
+  for (x = 0; x < lista->adyacentes[valor].largo; x++) {
+    if (lista->adyacentes[valor].vertices[x] == eliminado) {
+      continue;
+    }
+    if (!estaEn(*revisados, lista->adyacentes[valor].vertices[x], lista->cantidad)) {
+      (*revisados)[lista->adyacentes[valor].vertices[x] - 1] = lista->adyacentes[valor].vertices[x];
+      conectarL(lista->adyacentes[valor].vertices[x] - 1, lista, revisados, eliminado);
+    }
+  }
+}
+
+void obtenerVinculosL(Lista* lista) {
+
+  int i;
+  int gruposIniciales;
+  int gruposLuegoDeEliminar;
+
+  gruposIniciales = obtenerGruposL(lista, lista->cantidad + 1);
+
+  for (i = 0; i < lista->cantidad; i++) {
+    gruposLuegoDeEliminar = obtenerGruposL(lista, i + 1);
+    if (gruposIniciales < gruposLuegoDeEliminar) {
+      printf("  %d es un agente de vínculo. Crea %d componente(s) conexa(s).\n", i + 1, gruposLuegoDeEliminar);
+    }
+  }
+}
+
 void obtenerCliquesL(Lista* lista) {
 
   int i;
@@ -72,9 +136,9 @@ void obtenerCliquesL(Lista* lista) {
   int k;
   int l;
 
-  for (i = 0; i < lista->cantidad; i++) {
-    for (j = i + 1; j < lista->cantidad; j++) {
-      for (k = j + 1; k < lista->cantidad; k++) {
+  for (i = 0; i < lista->cantidad - 3; i++) {
+    for (j = i + 1; j < lista->cantidad - 2; j++) {
+      for (k = j + 1; k < lista->cantidad - 1; k++) {
         for (l = k + 1; l < lista->cantidad; l++) {
           if (i != j && esAdyacente(i + 1, &(lista->adyacentes[j]))) {
             if (i != k && esAdyacente(i + 1, &(lista->adyacentes[k]))) {
@@ -82,7 +146,7 @@ void obtenerCliquesL(Lista* lista) {
                 if (j != k && esAdyacente(j + 1, &(lista->adyacentes[k]))) {
                   if (j != l && esAdyacente(j + 1, &(lista->adyacentes[l]))) {
                     if (k != l && esAdyacente(k + 1, &(lista->adyacentes[l]))) {
-                      printf("%d, %d, %d, %d conforman un grupo de mejores amigos\n",i+1,j+1,k+1,l+1);
+                      printf("  %d, %d, %d, %d conforman un grupo de mejores amigos.\n",i+1,j+1,k+1,l+1);
                     }
                   }
                 }
@@ -95,14 +159,18 @@ void obtenerCliquesL(Lista* lista) {
   }
 }
 
-void obtenerVinculosL(Lista* lista) {
+void freeLista(Lista* lista) {
+  int i;
 
+  for (i = 0; i < lista->cantidad; i++) {
+    free(lista->adyacentes[i].vertices);
+  }
+  free(lista->adyacentes);
+  free(lista);
 }
 
-int conectar(Lista* lista, int actual, int eliminado, int* ocupados) {
-  
-}
-// MATRIZ DE ADYACENCIA
+
+// FUNCIONES MATRIZ DE ADYACENCIA
 int** generarMatrizAdyacencia(int* ordenMatriz) {
 
   FILE* archivo;
@@ -135,40 +203,13 @@ int** generarMatrizAdyacencia(int* ordenMatriz) {
   return matriz;
 }
 
-int estaEn(int* arreglo, int valor, int largo) {
-  int i;
-  for (i = 0; i < largo; i++) {
-    if (valor == arreglo[i]) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-void conectar(int valor, int** matriz, int ordenMatriz, int** revisados, int eliminado) {
-
-  int y;
-
-  for (y = 0; y < ordenMatriz; y++) {
-    if (y + 1 == eliminado) {
-      continue;
-    }
-    if (matriz[valor][y] == 1) {
-      if (!estaEn(*revisados, y + 1, ordenMatriz)) {
-        (*revisados)[y] = y + 1;
-        conectar(y, matriz, ordenMatriz, revisados, eliminado);
-      }
-    }
-  }
-}
-
-int obtenerGrupos(int** matriz, int eliminado, int ordenMatriz) {
+int obtenerGruposM(int** matriz, int eliminado, int ordenMatriz) {
   int i;
   int j;
   int cantidadGrupos;
   int* revisados;
 
-  revisados      = (int*)calloc(ordenMatriz, sizeof(int));
+  revisados      = (int *)calloc(ordenMatriz, sizeof(int));
   cantidadGrupos = 0;
 
   for (i = 0; i < ordenMatriz; i++) {
@@ -186,13 +227,30 @@ int obtenerGrupos(int** matriz, int eliminado, int ordenMatriz) {
       if (matriz[i][j] == 1) {
         if (!estaEn(revisados, j + 1, ordenMatriz)) {
           revisados[j] = j + 1;
-          conectar(j, matriz, ordenMatriz, &revisados, eliminado);
+          conectarM(j, matriz, ordenMatriz, &revisados, eliminado);
         }
       }
     }
   }
-
+  free(revisados);
   return cantidadGrupos;
+}
+
+void conectarM(int valor, int** matriz, int ordenMatriz, int** revisados, int eliminado) {
+
+  int x;
+
+  for (x = 0; x < ordenMatriz; x++) {
+    if (x + 1 == eliminado) {
+      continue;
+    }
+    if (matriz[valor][x] == 1) {
+      if (!estaEn(*revisados, x + 1, ordenMatriz)) {
+        (*revisados)[x] = x + 1;
+        conectarM(x, matriz, ordenMatriz, revisados, eliminado);
+      }
+    }
+  }
 }
 
 void obtenerVinculosM(int** matriz, int ordenMatriz) {
@@ -200,12 +258,12 @@ void obtenerVinculosM(int** matriz, int ordenMatriz) {
   int gruposIniciales;
   int gruposLuegoDeEliminar;
 
-  gruposIniciales = obtenerGrupos(matriz, ordenMatriz + 1, ordenMatriz);
+  gruposIniciales = obtenerGruposM(matriz, ordenMatriz + 1, ordenMatriz);
 
   for (i = 0; i < ordenMatriz; i++) {
-    gruposLuegoDeEliminar = obtenerGrupos(matriz, i + 1, ordenMatriz);
+    gruposLuegoDeEliminar = obtenerGruposM(matriz, i + 1, ordenMatriz);
     if (gruposIniciales < gruposLuegoDeEliminar) {
-      printf("%d es un agente de vínculo.\n", i + 1);
+      printf("  %d es un agente de vínculo. Crea %d componente(s) conexa(s).\n", i + 1, gruposLuegoDeEliminar);
     }
   }
 }
@@ -216,9 +274,9 @@ void obtenerCliquesM(int** matriz, int ordenMatriz) {
   int k;
   int l;
 
-  for (i = 0; i < ordenMatriz; i++) {
-    for (j = i+1; j < ordenMatriz; j++) {
-      for (k = j+1; k < ordenMatriz; k++) {
+  for (i = 0; i < ordenMatriz - 3; i++) {
+    for (j = i+1; j < ordenMatriz - 2; j++) {
+      for (k = j+1; k < ordenMatriz - 1; k++) {
         for (l = k+1;l < ordenMatriz; l++) {
           if (i != j && matriz[i][j]) {
             if (i != k && matriz[i][k]) {
@@ -226,7 +284,7 @@ void obtenerCliquesM(int** matriz, int ordenMatriz) {
                 if (j != k && matriz[j][k]) {
                   if (j != l && matriz[j][l]) {
                     if (k != l && matriz[k][l]) {
-                      printf("%d, %d, %d, %d conforman un grupo de mejores amigos\n",i+1,j+1,k+1,l+1);
+                      printf("  %d, %d, %d, %d conforman un grupo de mejores amigos.\n",i+1,j+1,k+1,l+1);
                     }
                   }
                 }
@@ -239,8 +297,27 @@ void obtenerCliquesM(int** matriz, int ordenMatriz) {
   }
 }
 
+void freeMatriz(int** matriz, int ordenMatriz) {
 
-// FUNCION INICIO
+  int i;
+  for (i = 0; i < ordenMatriz; i++) {
+    free(matriz[i]);
+  }
+  free(matriz);
+
+}
+
+// FUNCION GENERALES
+int estaEn(int* arreglo, int valor, int largo) {
+  int i;
+  for (i = 0; i < largo; i++) {
+    if (valor == arreglo[i]) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void iniciar() {
 
   // MATRIZ DE ADYACENCIA
@@ -251,22 +328,27 @@ void iniciar() {
   time_t finalMatriz;
 
   printf("\n\n***** Inicio del Programa *****\n\n");
-  time(&inicioMatriz);
+  printf("> Implementación mediante matriz de adyacencia ...\n\n");
+  inicioMatriz = clock();
   obtenerVinculosM(matriz, ordenMatriz);
   obtenerCliquesM(matriz, ordenMatriz);
-  time(&finalMatriz);
-  printf("\n***** Fin del Programa *****\n\n");
-  printf("Tiempo utilizado matriz: %f\n", difftime(inicioMatriz, finalMatriz));
+  finalMatriz = clock();
+  printf("\n Tiempo ejecución = %f\n\n\n", (double)(finalMatriz - inicioMatriz)/CLOCKS_PER_SEC);
+  freeMatriz(matriz, ordenMatriz);
+
 
   // LISTA DE ADYACENCIA
   Lista* lista;
   time_t inicioLista;
   time_t finalLista;
-  printf("\n\n***** Inicio del Programa *****\n\n");
-  time(&inicioLista);
+
+  printf("> Implementación mediante lista de adyacencia ...\n\n");
   lista = generarListaAdyacencia(ordenMatriz);
+  inicioLista = clock();
+  obtenerVinculosL(lista);
   obtenerCliquesL(lista);
-  time(&finalLista);
+  finalLista = clock();
+  printf("\n Tiempo ejecución = %f\n\n\n", (double)(finalLista - inicioLista)/CLOCKS_PER_SEC);
   printf("\n***** Fin del Programa *****\n\n");
-  printf("Tiempo utilizado lista: %f\n", difftime(inicioLista, finalLista));
+  freeLista(lista);
 }
