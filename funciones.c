@@ -17,24 +17,25 @@ Lista* crearLista(int cantidadVertices) {
   return lista;
 }
 
-Lista* generarListaAdyacencia(int ordenMatriz) {
+Lista* generarListaAdyacencia() {
 
   FILE* archivo;
   Lista* lista;
   int x;
   int y;
+  int cantidadVertices;
 
-  archivo = fopen ("Entrada.in", "r");
+  archivo = fopen ("gigante.in", "r");
 
   while (archivo == NULL) {
     printf("\n [>] Archivo 'Entrada.in' no encontrado !\n");
     exit(0);
   }
 
-  fscanf(archivo, "%d\n", &x);
+  fscanf(archivo, "%d\n", &cantidadVertices);
 
   lista  = NULL;
-  lista  = crearLista(ordenMatriz);
+  lista  = crearLista(cantidadVertices);
 
   while (fscanf(archivo, "%d %d\n", &x, &y) != EOF) {
     agregarAdyacente(y, &(lista->adyacentes[x-1]));
@@ -170,63 +171,76 @@ void freeLista(Lista* lista) {
 
 
 // FUNCIONES MATRIZ DE ADYACENCIA
-int** generarMatrizAdyacencia(int* ordenMatriz) {
+MatrizAdy* crearMatriz() {
+
+  MatrizAdy* matriz   = (MatrizAdy*)calloc(1, sizeof(MatrizAdy));
+  matriz->matriz       = NULL;
+  matriz->ordenMatriz = 0;
+
+  return matriz;
+}
+
+MatrizAdy* generarMatrizAdyacencia() {
 
   FILE* archivo;
   int   x;
   int   y;
-  int** matriz;
+  int orden;
 
-  matriz  = NULL;
-  archivo = fopen ("Entrada.in", "r");
+  archivo = fopen ("gigante.in", "r");
 
   while (archivo == NULL) {
     printf("\n [>] Archivo 'Entrada.in' no encontrado !\n");
     exit(0);
   }
 
-  fscanf(archivo, "%d\n", ordenMatriz);
-  matriz = (int **)calloc(*ordenMatriz, sizeof(int*));
-  for (x = 0; x < *ordenMatriz; x++) {
-    matriz[x] = (int*)calloc(*ordenMatriz, sizeof(int));
+  MatrizAdy* matriz  = crearMatriz();
+
+  fscanf(archivo, "%d\n", &orden);
+
+  matriz->matriz = (int **)calloc(orden, sizeof(int*));
+
+  for (x = 0; x < orden; x++) {
+    matriz->matriz[x] = (int*)calloc(orden, sizeof(int));
   }
 
   while (fscanf(archivo, "%d %d\n", &x, &y) != EOF) {
-    matriz[x-1][y-1] = 1;
-    matriz[y-1][x-1] = 1;
+    matriz->matriz[x-1][y-1] = 1;
+    matriz->matriz[y-1][x-1] = 1;
   }
 
+  matriz->ordenMatriz = orden;
+
   fclose (archivo);
-  // printf("El valor error matriz[2][6] es: %d\n", matriz[2][6]);
 
   return matriz;
 }
 
-int obtenerGruposM(int** matriz, int eliminado, int ordenMatriz) {
+int obtenerGruposM(MatrizAdy* matriz, int eliminado) {
   int i;
   int j;
   int cantidadGrupos;
   int* revisados;
 
-  revisados      = (int *)calloc(ordenMatriz, sizeof(int));
+  revisados      = (int *)calloc(matriz->ordenMatriz, sizeof(int));
   cantidadGrupos = 0;
 
-  for (i = 0; i < ordenMatriz; i++) {
+  for (i = 0; i < matriz->ordenMatriz; i++) {
     if (i + 1 == eliminado) {
       continue;
     }
-    if (!estaEn(revisados, i + 1, ordenMatriz)) {
+    if (!estaEn(revisados, i + 1, matriz->ordenMatriz)) {
       revisados[i] = i+1;
       cantidadGrupos ++;
     }
-    for (j = 0; j < ordenMatriz; j++) {
+    for (j = 0; j < matriz->ordenMatriz; j++) {
       if (j + 1 == eliminado) {
         continue;
       }
-      if (matriz[i][j] == 1) {
-        if (!estaEn(revisados, j + 1, ordenMatriz)) {
+      if (matriz->matriz[i][j] == 1) {
+        if (!estaEn(revisados, j + 1, matriz->ordenMatriz)) {
           revisados[j] = j + 1;
-          conectarM(j, matriz, ordenMatriz, &revisados, eliminado);
+          conectarM(j, matriz, &revisados, eliminado);
         }
       }
     }
@@ -235,54 +249,54 @@ int obtenerGruposM(int** matriz, int eliminado, int ordenMatriz) {
   return cantidadGrupos;
 }
 
-void conectarM(int valor, int** matriz, int ordenMatriz, int** revisados, int eliminado) {
+void conectarM(int valor, MatrizAdy* matriz, int** revisados, int eliminado) {
 
   int x;
 
-  for (x = 0; x < ordenMatriz; x++) {
+  for (x = 0; x < matriz->ordenMatriz; x++) {
     if (x + 1 == eliminado) {
       continue;
     }
-    if (matriz[valor][x] == 1) {
-      if (!estaEn(*revisados, x + 1, ordenMatriz)) {
+    if (matriz->matriz[valor][x] == 1) {
+      if (!estaEn(*revisados, x + 1, matriz->ordenMatriz)) {
         (*revisados)[x] = x + 1;
-        conectarM(x, matriz, ordenMatriz, revisados, eliminado);
+        conectarM(x, matriz, revisados, eliminado);
       }
     }
   }
 }
 
-void obtenerVinculosM(int** matriz, int ordenMatriz) {
+void obtenerVinculosM(MatrizAdy* matriz) {
   int i;
   int gruposIniciales;
   int gruposLuegoDeEliminar;
 
-  gruposIniciales = obtenerGruposM(matriz, ordenMatriz + 1, ordenMatriz);
+  gruposIniciales = obtenerGruposM(matriz, matriz->ordenMatriz + 1);
 
-  for (i = 0; i < ordenMatriz; i++) {
-    gruposLuegoDeEliminar = obtenerGruposM(matriz, i + 1, ordenMatriz);
+  for (i = 0; i < matriz->ordenMatriz; i++) {
+    gruposLuegoDeEliminar = obtenerGruposM(matriz, i + 1);
     if (gruposIniciales < gruposLuegoDeEliminar) {
       printf("  %d es un agente de vínculo. Crea %d componente(s) conexa(s).\n", i + 1, gruposLuegoDeEliminar);
     }
   }
 }
 
-void obtenerCliquesM(int** matriz, int ordenMatriz) {
+void obtenerCliquesM(MatrizAdy* matriz) {
   int i;
   int j;
   int k;
   int l;
 
-  for (i = 0; i < ordenMatriz - 3; i++) {
-    for (j = i+1; j < ordenMatriz - 2; j++) {
-      for (k = j+1; k < ordenMatriz - 1; k++) {
-        for (l = k+1;l < ordenMatriz; l++) {
-          if (i != j && matriz[i][j]) {
-            if (i != k && matriz[i][k]) {
-              if (i != l && matriz[i][l]) {
-                if (j != k && matriz[j][k]) {
-                  if (j != l && matriz[j][l]) {
-                    if (k != l && matriz[k][l]) {
+  for (i = 0; i < matriz->ordenMatriz - 3; i++) {
+    for (j = i+1; j < matriz->ordenMatriz - 2; j++) {
+      for (k = j+1; k < matriz->ordenMatriz - 1; k++) {
+        for (l = k+1;l < matriz->ordenMatriz; l++) {
+          if (i != j && matriz->matriz[i][j]) {
+            if (i != k && matriz->matriz[i][k]) {
+              if (i != l && matriz->matriz[i][l]) {
+                if (j != k && matriz->matriz[j][k]) {
+                  if (j != l && matriz->matriz[j][l]) {
+                    if (k != l && matriz->matriz[k][l]) {
                       printf("  %d, %d, %d, %d conforman un grupo de mejores amigos.\n",i+1,j+1,k+1,l+1);
                     }
                   }
@@ -296,14 +310,14 @@ void obtenerCliquesM(int** matriz, int ordenMatriz) {
   }
 }
 
-void freeMatriz(int** matriz, int ordenMatriz) {
+void freeMatrizAdy(MatrizAdy* matriz) {
 
   int i;
-  for (i = 0; i < ordenMatriz; i++) {
-    free(matriz[i]);
+  for (i = 0; i < matriz->ordenMatriz; i++) {
+    free(matriz->matriz[i]);
   }
+  free(matriz->matriz);
   free(matriz);
-
 }
 
 // FUNCION GENERALES
@@ -320,20 +334,20 @@ int estaEn(int* arreglo, int valor, int largo) {
 void iniciar() {
 
   // MATRIZ DE ADYACENCIA
-  int** matriz;
-  int ordenMatriz;
-  matriz = generarMatrizAdyacencia(&ordenMatriz);
+  MatrizAdy* matriz;
+
+  matriz = generarMatrizAdyacencia();
   time_t inicioMatriz;
   time_t finalMatriz;
 
   printf("\n\n***** Inicio del Programa *****\n\n");
   printf("> Implementación mediante matriz de adyacencia ...\n\n");
   inicioMatriz = clock();
-  obtenerVinculosM(matriz, ordenMatriz);
-  obtenerCliquesM(matriz, ordenMatriz);
+  obtenerVinculosM(matriz);
+  obtenerCliquesM(matriz);
   finalMatriz = clock();
   printf("\n Tiempo ejecución = %f\n\n\n", (double)(finalMatriz - inicioMatriz)/CLOCKS_PER_SEC);
-  freeMatriz(matriz, ordenMatriz);
+  freeMatrizAdy(matriz);
 
 
   // LISTA DE ADYACENCIA
@@ -342,7 +356,7 @@ void iniciar() {
   time_t finalLista;
 
   printf("> Implementación mediante lista de adyacencia ...\n\n");
-  lista = generarListaAdyacencia(ordenMatriz);
+  lista = generarListaAdyacencia();
   inicioLista = clock();
   obtenerVinculosL(lista);
   obtenerCliquesL(lista);
