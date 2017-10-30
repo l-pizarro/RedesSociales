@@ -25,7 +25,7 @@ Lista* generarListaAdyacencia() {
   int y;
   int cantidadVertices;
 
-  archivo = fopen ("gigante.in", "r");
+  archivo = fopen ("Entrada.in", "r");
 
   while (archivo == NULL) {
     printf("\n [>] Archivo 'Entrada.in' no encontrado !\n");
@@ -187,7 +187,7 @@ MatrizAdy* generarMatrizAdyacencia() {
   int   y;
   int orden;
 
-  archivo = fopen ("gigante.in", "r");
+  archivo = fopen ("Entrada.in", "r");
 
   while (archivo == NULL) {
     printf("\n [>] Archivo 'Entrada.in' no encontrado !\n");
@@ -346,7 +346,7 @@ void iniciar() {
   obtenerVinculosM(matriz);
   obtenerCliquesM(matriz);
   finalMatriz = clock();
-  printf("\n Tiempo ejecución = %f\n\n\n", (double)(finalMatriz - inicioMatriz)/CLOCKS_PER_SEC);
+  printf("\n Tiempo ejecución = %f s.\n\n\n", (double)(finalMatriz - inicioMatriz)/CLOCKS_PER_SEC);
   freeMatrizAdy(matriz);
 
 
@@ -361,7 +361,7 @@ void iniciar() {
   obtenerVinculosL(lista);
   obtenerCliquesL(lista);
   finalLista = clock();
-  printf("\n Tiempo ejecución = %f\n\n\n", (double)(finalLista - inicioLista)/CLOCKS_PER_SEC);
+  printf("\n Tiempo ejecución = %f s.\n\n\n", (double)(finalLista - inicioLista)/CLOCKS_PER_SEC);
   printf("\n***** Fin del Programa *****\n\n");
   freeLista(lista);
 }
